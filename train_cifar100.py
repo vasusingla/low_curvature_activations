@@ -16,6 +16,7 @@ import os
 
 from wideresnet import WideResNet
 from preactresnet import PreActResNet18
+import activations
 
 CIFAR100_MEAN = (0.5070751592371323, 0.48654887331495095, 0.4409178433670343)
 CIFAR100_STD = (0.2673342858792401, 0.2564384629170883, 0.27615047132568404)
@@ -110,6 +111,15 @@ def attack_pgd(model, X, y, epsilon, alpha, attack_iters, restarts,
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', default='PreActResNet18')
+    parser.add_argument('--activation', default='relu', choices=['relu', 'swish', 'gelu', 'elu', 'celu',
+                                                                 'softplus', 'softplus_parametric', 'mish', 'bent_id',
+                                                                 'lisht', 'smoothgradrelu', 'smoothrelu',
+                                                                 'swish_parameteric',
+                                                                 'leaky_relu', 'tanh', 'sigmoid'])
+    parser.add_argument('--swish_beta', default=2, type=float, help='Only use with swish_parameteric, '
+                                                                    'has no effect otherwise')
+    parser.add_argument('--leakyrelu_slope', default=0.2, type=float, help='Only use with LeakyReLU, '
+                                                                           'has no effect otherwise')
     parser.add_argument('--l2', default=0, type=float)
     parser.add_argument('--l1', default=0, type=float)
     parser.add_argument('--batch-size', default=128, type=int)
@@ -189,10 +199,19 @@ def main():
     epsilon = (args.epsilon / 255.)
     pgd_alpha = (args.pgd_alpha / 255.)
 
+    if args.activation=='smoothrelu':
+        act_fn = partial(activations.SmoothReLU, alpha=args.smoothrelu_alpha)
+    elif args.activation=='swish_parameteric':
+        act_fn = partial(activations.SwishParameteric, beta=args.swish_beta)
+    elif args.activation=='leaky_relu':
+        act_fn = nn.LeakyReLU(negative_slope=args.leakyrelu_slope)
+    else:
+        act_fn = eval('activations.' + args.activation)
+
     if args.model == 'PreActResNet18':
-        model = PreActResNet18(num_classes=100)
+        model = PreActResNet18(activation=act_fn)
     elif args.model == 'WideResNet':
-        model = WideResNet(34, 10, widen_factor=args.width_factor, dropRate=0.0)
+        model = WideResNet(34, 10, activation=act_fn, widen_factor=args.width_factor, dropRate=0.0)
     else:
         raise ValueError("Unknown model")
 

@@ -6,7 +6,7 @@ np.random.seed(0)
 m = 50000
 P = np.random.permutation(m)
 
-n = 1000
+n = 5000
 
 
 def cifar10(root):
