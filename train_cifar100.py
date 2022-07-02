@@ -209,9 +209,9 @@ def main():
         act_fn = eval('activations.' + args.activation)
 
     if args.model == 'PreActResNet18':
-        model = PreActResNet18(activation=act_fn)
+        model = PreActResNet18(100, activation=act_fn)
     elif args.model == 'WideResNet':
-        model = WideResNet(34, 10, activation=act_fn, widen_factor=args.width_factor, dropRate=0.0)
+        model = WideResNet(34, 100, activation=act_fn, widen_factor=args.width_factor, dropRate=0.0)
     else:
         raise ValueError("Unknown model")
 
